@@ -1,0 +1,10 @@
+---
+azure_region: "westus" 
+
+client_id: 8f5c1424-51e9-47e2-9118-1b05b1cac071
+secret: eaK=jgKF/8T2ykQ34_KvkuelAP[wAe6V
+subscription_id: 7afb857c-4c6c-478c-a51b-71777b616cb8
+tenant: e85c5307-76b1-4c48-bc5d-e88373dda261
+
+
+ssh_keys: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDd6MrykuatqsW8POdGDtskZRVYckvHnj8Afbk/uiMZVbBe0HFX0npHRx2DIhDjZPTNarqn0kxnmzmKZs+epy+ZxGj/CdoUhh7YiImq8n4/Twhb6VWNM1yGDDqobIqJ6QzaF5BI7YJYbXaa8g1Tdro9UuC6fqi5W1gH4S2aHV4kEvUiMwUnUAtIRDXNSvZqs+VIgyaKK2B6KW8GjEY66HajtjKN77AAaAMWjIuKsvCDH6ixVT2AvQ022XPiJln44UeNv4XmeoRiBrIs/mPLURH4/3ud9EFvRul91puJH6kzZFbUFIlbZ2kx6hPeeWKiqAOOnX5IYSs5c81tDwXq4GGH"

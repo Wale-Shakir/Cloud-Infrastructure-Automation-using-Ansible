@@ -1,0 +1,238 @@
+- name: include secret
+  include_vars: ../vars/secret.yml
+
+
+- name: Create AWS VPC
+  ec2_vpc_net:
+    name: My VPC
+    cidr_block: "{{ vpc_cidr_block }}"
+    region: "{{ aws_region }}"
+    aws_access_key: "{{ access_key }}"
+    aws_secret_key: "{{ secret_key }}"
+    state: present
+  register: my_first_vpc
+  tags:
+    - vpc
+    - recipe2
+
+- name: Create Public Subnet in VPC
+  ec2_vpc_subnet:
+    vpc_id: "{{ my_first_vpc.vpc.id }}"
+    cidr: "{{ vpc_public_subnet_cidr }}"
+    region: "{{ aws_region }}"
+    az: "{{ aws_region }}a"
+    aws_access_key: "{{ access_key }}"
+    aws_secret_key: "{{ secret_key }}"
+    state:  present
+    tags:
+      Name: Public Subnet
+  register: my_public_subnet
+  tags:
+    - vpc
+    - recipe2
+
+- name: Create Private Subnet in VPC
+  ec2_vpc_subnet:
+    vpc_id: "{{ my_first_vpc.vpc.id }}"
+    cidr: "{{ vpc_private_subnet_cidr }}"
+    region: "{{ aws_region }}"
+    az: "{{ aws_region }}a"
+    aws_access_key: "{{ access_key }}"
+    aws_secret_key: "{{ secret_key }}"
+    state:  present
+    tags:
+      Name: Private Subnet
+  register: my_private_subnet
+  tags:
+    - vpc
+    - recipe2
+
+- name: Create Internet Gateway
+  ec2_vpc_igw:
+    vpc_id: "{{ my_first_vpc.vpc.id }}"
+    region: "{{ aws_region }}"
+    aws_access_key: "{{ access_key }}"
+    aws_secret_key: "{{ secret_key }}"
+    state: present
+  register: my_first_igw
+  tags:
+    - vpc
+    - recipe2
+
+- name: Create NAT Gateway
+  ec2_vpc_nat_gateway:
+    if_exist_do_not_create: yes
+    subnet_id: "{{ my_public_subnet.subnet.id }}"
+    region: "{{ aws_region }}"
+    state: present
+    aws_access_key: "{{ access_key }}"
+    aws_secret_key: "{{ secret_key }}"
+    wait: yes
+  register: my_first_nat_gateway
+  tags:
+    - vpc
+    - recipe2
+
+- name: Create Route Table for Public Subnet
+  ec2_vpc_route_table:
+    vpc_id: "{{ my_first_vpc.vpc.id }}"
+    region: "{{ aws_region }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ my_first_igw.gateway_id }}"
+    subnets:
+      - "{{ my_public_subnet.subnet.id }}"
+    aws_access_key: "{{ access_key }}"
+    aws_secret_key: "{{ secret_key }}"
+    tags:
+      Name: Public Subnet Route Table
+  tags:
+    - vpc
+    - recipe2
+
+- name: Create Route Table for Private Subnet
+  ec2_vpc_route_table:
+    vpc_id: "{{ my_first_vpc.vpc.id }}"
+    region: "{{ aws_region }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ my_first_nat_gateway.nat_gateway_id }}"
+    subnets:
+      - "{{ my_private_subnet.subnet.id }}"
+    aws_access_key: "{{ access_key }}"
+    aws_secret_key: "{{ secret_key }}"
+    tags:
+      Name: Private Subnet Route Table
+  tags:
+    - vpc
+    - recipe2
+
+
+
+- name: Create EC2 Security Group
+  ec2_group:
+    name: my_first_sg
+    description: A sample security group webservers
+    vpc_id: "{{ my_first_vpc.vpc.id }}"
+    region: "{{ aws_region }}"
+    aws_secret_key: "{{ secret_key }}"
+    aws_access_key: "{{ access_key }}"
+    rules:
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 10.0.0.0/8
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 0.0.0.0/0        
+      - proto: icmp
+        from_port: 8
+        to_port:  -1
+        cidr_ip: 10.0.0.0/8
+    rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+  register: my_first_sg
+  tags:
+    - security_group
+    - recipe3
+
+
+- name: Create EC2 Key Pair
+  ec2_key:
+    name: my_first_key
+    aws_access_key: "{{ access_key }}"
+    aws_secret_key: "{{ secret_key }}"
+    key_material: "{{ key }}"
+    region: "{{ aws_region }}"
+    state: present
+  tags:
+    - ec2_instance
+    - recipe4
+
+
+- name: Create EC2 Instance in private subnet
+  ec2:
+    key_name: my_first_key
+    instance_type: "{{ instance_type }}"
+    image: "{{ ami_id }}"
+    wait: yes
+    group: my_first_sg
+    vpc_subnet_id: "{{ my_private_subnet.subnet.id }}"
+    aws_access_key: "{{ access_key }}"
+    aws_secret_key: "{{ secret_key }}"
+    region: "{{ aws_region }}"
+    count_tag:
+      Name: Private Instance
+    exact_count: "{{ private_instance_count }}"
+    instance_tags:
+      Name: Private Instance
+  tags:
+    - ec2_instance
+    - recipe4
+
+
+- name: Create EC2 Instance in public subnet
+  ec2:
+    key_name: my_first_key
+    instance_type: "{{ instance_type }}"
+    image: "{{ ami_id }}"
+    wait: yes
+    group: my_first_sg
+    vpc_subnet_id: "{{ my_public_subnet.subnet.id }}"
+    assign_public_ip: yes
+    aws_access_key: "{{ access_key }}"
+    aws_secret_key: "{{ secret_key }}"
+    region: "{{ aws_region }}"
+    count_tag:
+      Name: Public Instance    
+    exact_count: "{{ public_instance_count }}"
+    instance_tags:
+      Name: Public Instance
+  register: ec2_public_instance
+  tags:
+    - ec2_instance
+    - recipe4
+
+
+- name: Create EBS volume and attach to Instance
+  ec2_vol:
+    aws_access_key: "{{ access_key }}"
+    aws_secret_key: "{{ secret_key }}"
+    region: "{{ aws_region }}"
+    instance: "{{ item }}"
+    volume_size: 10
+    name: Public Instance
+    device_name: /dev/xvdf
+  with_items: "{{ ec2_public_instance.instance_ids }}"
+  register: ec2_vol
+  tags:
+    - ebs_volume
+    - recipe6
+
+
+
+
+- name: Create AMI of Public Instance Created
+  ec2_ami:
+    aws_access_key: "{{ access_key }}"
+    aws_secret_key: "{{ secret_key }}"
+    region: "{{ aws_region }}"
+    instance_id: "{{ item }}"
+    wait: yes
+    name: first_ami
+    no_reboot: yes
+    tags:
+      Name: First AMI
+  with_items:
+    - "{{ ec2_public_instance.instance_ids }}"
+  register: image
+  tags:
+    - ami
+    - recipe7
+

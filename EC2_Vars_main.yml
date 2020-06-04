@@ -1,0 +1,20 @@
+# VPC Information
+vpc_name:       "My VPC"
+vpc_cidr_block: "10.0.0.0/16"
+aws_region: "us-east-1"
+aws_zone: "us-east-1a"
+
+# Subnets
+vpc_public_subnet_cidr: "10.0.0.0/24"
+
+# Subnets
+vpc_private_subnet_cidr: "10.0.1.0/24"
+
+#Key Pair Content
+key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDe762eVJxkTy+qLP3LLmC1oeEFuzyYT5j/W7KePZLWQUF9tlDXux0k0+9AjLNi/YdPJJsB5rCwU9Bu1X3W5aUXkAH9zSnOGqYRcj15sM69JYI4/aMBRUkNgKWKp8DkYXEE3/7T2zS+yxsFuFmKfZm3I8oaXNxphMFzG8BvPfw9bAmvXLym5kIlz6PLZXz9lceCpIEHoFCO50j0J+DXKJRjsPqUBlkYMS7fmoWE/Af4Gm0NJ7eXs4qaQRFRt/zBR31oMStGh77Zoqgpg64oJh8sezyEhY3bSvEzsxxIPZEJ/buoLeaSyI71QqkbzYGFQ2hHxdJbXP6daN99LLVZQZhl root@ubuntu'
+
+#EC2 Instance Info
+instance_type: 't2.micro'
+ami_id:        'ami-07ebfd5b3428b6f4d'
+private_instance_count: 1
+public_instance_count: 1
